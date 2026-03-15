@@ -3,260 +3,274 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>五夜の警備員 - モバイル対応版</title>
+<title>FNAF1 再現 - モバイル版</title>
 <style>
     body {
-        margin:0;
-        height:100vh;
-        background:#000;
-        font-family: Arial, sans-serif;
-        color:#0f3;
-        overflow:hidden;
-        touch-action: none;          /* スマホのピンチズーム等を防ぐ */
-        user-select: none;
-    }
-    #game {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        background: #111 radial-gradient(circle at 50% 30%, #222 0%, #000 70%);
+        margin:0; padding:0; height:100vh; background:#000; overflow:hidden;
+        font-family:Arial, sans-serif; color:#0f0; touch-action:manipulation;
+        user-select:none; image-rendering:pixelated;
     }
     #office {
-        position: absolute;
-        inset:0;
-        background: linear-gradient(#1a1a1a, #000);
-        filter: brightness(0.5);
+        position:absolute; inset:0; background:#0a0a0a;
+        background: linear-gradient(#111 30%, #000 100%);
     }
     .door {
-        position: absolute;
-        top: 0;
-        width: 38%;
-        height: 100%;
-        background: #1e1e1e;
-        transition: all 0.6s ease;
-        box-shadow: inset 0 0 80px #000;
-        border: 2px solid #333;
+        position:absolute; top:0; height:100%; width:35%; background:#222;
+        transition:transform 0.4s, box-shadow 0.3s; box-shadow:inset 0 0 60px #000;
+        border:2px solid #444;
     }
-    #left-door  { left:0; transform: translateX(-100%); }
-    #right-door { right:0; transform: translateX(100%); }
-    .closed {
-        transform: translateX(0) !important;
-        background: #0a0a0a;
-        box-shadow: inset 0 0 140px #000, 0 0 60px #c00;
-        border-color: #c00;
+    #left-door  { left:0;  transform:translateX(-100%); }
+    #right-door { right:0; transform:translateX(100%); }
+    .closed { transform:translateX(0)!important; background:#111; box-shadow:0 0 80px #c00, inset 0 0 120px #000; border-color:#800; }
+
+    .light-btn, .door-btn {
+        position:absolute; bottom:8%; width:18%; height:14%; background:rgba(0,0,0,0.6);
+        border:3px solid #0f0; color:#0f0; font-size:1.1rem; font-weight:bold;
+        display:flex; align-items:center; justify-content:center; cursor:pointer;
+        transition:0.2s; z-index:10;
     }
+    .light-btn:active, .door-btn:active { background:#0f0; color:#000; }
+    #left-light   { left:2%;  }
+    #right-light  { right:2%; }
+    #left-door-btn  { left:22%; }
+    #right-door-btn { right:22%; }
+
+    #cam-overlay {
+        position:absolute; inset:0; background:rgba(0,0,0,0.85); color:#0f0;
+        display:none; flex-direction:column; align-items:center; justify-content:center;
+        font-family:monospace; font-size:1.3rem; z-index:5; pointer-events:none;
+    }
+    #cam-name { font-size:2.2rem; margin:10px; text-shadow:0 0 10px #0f0; }
+
     #hud {
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        padding: 12px 20px;
-        display: flex;
-        justify-content: space-between;
-        font-size: 1.3rem;
-        background: rgba(0,0,0,0.5);
-        z-index: 10;
-        pointer-events: none;
+        position:absolute; top:0; left:0; right:0; padding:8px 12px;
+        display:flex; justify-content:space-between; font-size:1.2rem;
+        background:rgba(0,0,0,0.5); z-index:20; pointer-events:none;
     }
-    #time {
-        position: absolute;
-        bottom: 8%;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 3.2rem;
-        font-weight: bold;
-        color: #f33;
-        text-shadow: 0 0 30px #800, 0 0 60px #400;
-        z-index: 5;
-        pointer-events: none;
+    #power-usage {
+        position:absolute; bottom:2%; left:50%; transform:translateX(-50%);
+        font-size:1.4rem; color:#f33; text-shadow:0 0 10px #800;
     }
-    #jump {
-        position: absolute;
-        inset:0;
-        background:#000 url('https://via.placeholder.com/800x600/000/800?text=JUMPSCARE!') center/contain no-repeat;
-        opacity: 0;
-        transition: opacity 0.2s;
-        z-index: 999;
-        pointer-events: none;
+    #time { font-size:2.8rem; color:#f44; text-shadow:0 0 20px #800; }
+
+    #jumpscare {
+        position:absolute; inset:0; background:#000; opacity:0;
+        transition:opacity 0.15s; z-index:999; pointer-events:none;
+        display:flex; align-items:center; justify-content:center; font-size:80px; color:#f00;
     }
     #start {
-        position: absolute;
-        inset:0;
-        background: rgba(0,0,0,0.92);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 40px;
-        z-index: 1000;
-        color: #0f3;
-        font-size: 2.8rem;
+        position:absolute; inset:0; background:rgba(0,0,0,0.9); z-index:1000;
+        display:flex; flex-direction:column; align-items:center; justify-content:center; gap:30px;
+        color:#0f0; font-size:2.5rem;
     }
-    button {
-        padding: 18px 50px;
-        font-size: 2rem;
-        background: #000;
-        color: #0f3;
-        border: 4px solid #0f3;
-        cursor: pointer;
-        transition: 0.25s;
-    }
-    button:active, button:hover {
-        background: #0f3;
-        color: #000;
-        box-shadow: 0 0 40px #0f3;
-    }
-    /* タッチエリアの視覚的ヒント（オプション） */
-    .touch-hint {
-        position: absolute;
-        top: 40%;
-        font-size: 1.1rem;
-        color: rgba(0,255,51,0.4);
-        pointer-events: none;
-        z-index: 8;
-    }
-    #left-hint  { left: 10%; }
-    #right-hint { right: 10%; }
+    button { padding:16px 48px; font-size:1.8rem; background:#000; color:#0f0; border:4px solid #0f0; }
+    button:active { background:#0f0; color:#000; }
 </style>
 </head>
 <body>
 
-<div id="game">
-    <div id="office"></div>
+<div id="office">
     <div id="left-door"  class="door"></div>
     <div id="right-door" class="door"></div>
-    
+
     <div id="hud">
         <div>NIGHT 1</div>
-        <div id="power">電力: 100%</div>
+        <div id="power">電力: 99%</div>
     </div>
-    
+
     <div id="time">12 AM</div>
-    
-    <div id="jump"></div>
-    
-    <div class="touch-hint" id="left-hint">← 左ドア タップ</div>
-    <div class="touch-hint" id="right-hint">右ドア タップ →</div>
+    <div id="power-usage">電力使用: ■</div>
+
+    <!-- コントロール -->
+    <div id="left-light"   class="light-btn">左ライト</div>
+    <div id="right-light"  class="light-btn">右ライト</div>
+    <div id="left-door-btn"  class="door-btn">左ドア</div>
+    <div id="right-door-btn" class="door-btn">右ドア</div>
+
+    <!-- カメラ画面 -->
+    <div id="cam-overlay">
+        <div id="cam-name">CAM 01 - STAGE</div>
+        <div>Bonnie: ---   Chica: ---</div>
+        <div>Foxy: ----   Freddy: ---</div>
+    </div>
+
+    <div id="jumpscare">JUMPSCARE!</div>
 </div>
 
 <div id="start">
-    <div>五夜の警備員<br><small style="font-size:1.1rem;opacity:0.7;">モバイル対応版</small></div>
-    <button onclick="start()">START</button>
+    <div>FNAF1 再現ミニ</div>
+    <button onclick="startGame()">夜を始める</button>
 </div>
 
 <script>
-let power = 100;
-let hour = 0;
-let isLeftClosed  = false;
-let isRightClosed = false;
-let gameActive = false;
-let enemyAt   = 0;     // 0=遠く ... 3=ドア前
-let enemySide = 'left';
+let power = 99;
+let timeHour = 0;
+let gameRunning = false;
+let leftDoorClosed  = false;
+let rightDoorClosed = false;
+let leftLightOn     = false;
+let rightLightOn    = false;
+let cameraOn        = false;
 
-const leftDoor  = document.getElementById('left-door');
-const rightDoor = document.getElementById('right-door');
-const powerEl   = document.getElementById('power');
-const timeEl    = document.getElementById('time');
-const jump      = document.getElementById('jump');
-const startScr  = document.getElementById('start');
+let bonniePos = 0;  // 0=ステージ ~ 6=オフィス左
+let chicaPos  = 0;  // 0=ステージ ~ 6=オフィス右
+let foxyPos   = 0;  // 0=隠れ ~ 4=カーテン外 → 突進
+let freddyPos = 0;
 
-function updateDoors() {
-    leftDoor.classList.toggle('closed', isLeftClosed);
-    rightDoor.classList.toggle('closed', isRightClosed);
+const powerEl     = document.getElementById('power');
+const usageEl     = document.getElementById('power-usage');
+const timeEl      = document.getElementById('time');
+const camOverlay  = document.getElementById('cam-overlay');
+const jumpscare   = document.getElementById('jumpscare');
+const startScreen = document.getElementById('start');
+
+const leftDoorEl  = document.getElementById('left-door');
+const rightDoorEl = document.getElementById('right-door');
+
+function updatePowerUsage() {
+    let bars = 1; // ファン常時
+    if (leftDoorClosed)  bars++;
+    if (rightDoorClosed) bars++;
+    if (leftLightOn || rightLightOn) bars++;
+    if (cameraOn) bars += 2;
+
+    const barStr = '■'.repeat(Math.min(bars,4)) + '□'.repeat(4-Math.min(bars,4));
+    usageEl.textContent = `電力使用: ${barStr}`;
+    return bars;
 }
 
-function drain(amount) {
-    power -= amount;
-    if (power < 0) power = 0;
+function drainPower() {
+    const bars = updatePowerUsage();
+    let drainRate;
+
+    // FNAF1に近い消費曲線（簡略化）
+    if      (bars === 1) drainRate = 0.08;   // 約10秒で1%
+    else if (bars === 2) drainRate = 0.18;
+    else if (bars === 3) drainRate = 0.35;
+    else                 drainRate = 0.70;
+
+    power -= drainRate;
+    if (power <= 0) {
+        power = 0;
+        gameOver();
+        return;
+    }
     powerEl.textContent = `電力: ${Math.floor(power)}%`;
-    if (power <= 0) endGame(false);
 }
 
-function endGame(won = false) {
-    gameActive = false;
-    if (!won) {
-        jump.style.opacity = 1;
-        setTimeout(() => {
-            alert("…やられた GAME OVER");
-            location.reload();
-        }, 1800);
-    } else {
-        alert("6 AM！ 生き延びた！");
+function gameOver() {
+    gameRunning = false;
+    leftDoorEl.classList.remove('closed');
+    rightDoorEl.classList.remove('closed');
+
+    // Freddyの音楽風演出（テキストで）
+    jumpscare.textContent = "♪♪♪ ... POWER OUT";
+    jumpscare.style.opacity = 1;
+    setTimeout(() => {
+        alert("電力切れ... GAME OVER");
+        location.reload();
+    }, 2200);
+}
+
+function checkAttack() {
+    // Bonnieが左ドアに来た
+    if (bonniePos >= 5 && !leftDoorClosed) {
+        jumpscare.textContent = "BONNIE";
+        jumpscare.style.opacity = 1;
+        setTimeout(gameOver, 400);
+        return true;
+    }
+    // Chicaが右ドアに来た
+    if (chicaPos >= 5 && !rightDoorClosed) {
+        jumpscare.textContent = "CHICA";
+        jumpscare.style.opacity = 1;
+        setTimeout(gameOver, 400);
+        return true;
+    }
+    // Foxy突進（簡易）
+    if (foxyPos >= 4 && Math.random() < 0.4 && !cameraOn) {
+        jumpscare.textContent = "FOXY RUN!";
+        jumpscare.style.opacity = 1;
+        setTimeout(gameOver, 600);
+        return true;
+    }
+    return false;
+}
+
+function aiTick() {
+    if (!gameRunning) return;
+
+    // 簡易AI（オリジナルに近いランダム移動）
+    if (Math.random() < 0.12 + timeHour*0.03) bonniePos = Math.min(bonniePos+1, 6);
+    if (Math.random() < 0.10 + timeHour*0.025) chicaPos  = Math.min(chicaPos +1, 6);
+    if (Math.random() < 0.08 + timeHour*0.04 && foxyPos < 4) foxyPos++;
+
+    // Freddyは遅め
+    if (Math.random() < 0.04 + timeHour*0.015) freddyPos++;
+
+    // カメラ見てるとFoxy/Freddy抑制（オリジナル再現）
+    if (cameraOn) {
+        if (Math.random() < 0.35) foxyPos = Math.max(0, foxyPos-1);
+        if (Math.random() < 0.25) freddyPos = Math.max(0, freddyPos-1);
+    }
+
+    checkAttack();
+}
+
+function gameLoop() {
+    if (!gameRunning) return;
+
+    drainPower();
+    aiTick();
+
+    timeHour += 1/ (60*8); // 約8分で6時間
+    const h = Math.floor(timeHour) + 12;
+    timeEl.textContent = `${h%12||12} ${h<18?'AM':'PM'}`;
+
+    if (timeHour >= 6) {
+        gameRunning = false;
+        alert("6 AM... 生き延びた！");
         location.reload();
     }
 }
 
-function aiMove() {
-    if (!gameActive) return;
+function toggleLeftDoor()  { leftDoorClosed  = !leftDoorClosed;  leftDoorEl.classList.toggle('closed', leftDoorClosed); }
+function toggleRightDoor() { rightDoorClosed = !rightDoorClosed; rightDoorEl.classList.toggle('closed', rightDoorClosed); }
+function toggleLeftLight() { leftLightOn = !leftLightOn; }
+function toggleRightLight(){ rightLightOn= !rightLightOn; }
 
-    if (Math.random() < 0.16 + hour * 0.035) {
-        if (enemyAt < 3) {
-            enemyAt++;
-        } else {
-            const closed = enemySide === 'left' ? isLeftClosed : isRightClosed;
-            if (!closed) {
-                endGame(false);
-                return;
-            } else {
-                enemyAt = Math.random() < 0.6 ? 0 : 1;
-            }
-        }
-        if (Math.random() < 0.28) {
-            enemySide = enemySide === 'left' ? 'right' : 'left';
-        }
-    }
+// カメラON/OFF（スペース or 画面中央長押しでも可）
+function toggleCamera() {
+    cameraOn = !cameraOn;
+    camOverlay.style.display = cameraOn ? 'flex' : 'none';
 }
 
-function tick() {
-    if (!gameActive) return;
+document.getElementById('left-door-btn').addEventListener('pointerdown', toggleLeftDoor);
+document.getElementById('right-door-btn').addEventListener('pointerdown', toggleRightDoor);
+document.getElementById('left-light').addEventListener('pointerdown', toggleLeftLight);
+document.getElementById('right-light').addEventListener('pointerdown', toggleRightLight);
 
-    let drain = 0.9;
-    if (isLeftClosed)  drain += 3.2;
-    if (isRightClosed) drain += 3.2;
-    drain(drain);
+// 画面タップでカメラ（モバイル向け）
+document.addEventListener('pointerdown', e => {
+    if (!gameRunning) return;
+    if (e.target.tagName === 'BUTTON' || e.target.classList.contains('light-btn') || e.target.classList.contains('door-btn')) return;
 
-    hour += 1 / 240;   // 約4分で6時間（調整可）
-    const h = Math.floor(hour) + 12;
-    timeEl.textContent = `${h % 12 || 12} ${h < 18 ? 'AM' : 'PM'}`;
-
-    if (hour >= 6) {
-        endGame(true);
-        return;
+    // 画面中央付近タップ → カメラトグル
+    if (Math.abs(e.clientX - window.innerWidth/2) < 80 && Math.abs(e.clientY - window.innerHeight/2) < 120) {
+        toggleCamera();
     }
+});
 
-    aiMove();
-}
+function startGame() {
+    startScreen.style.display = 'none';
+    gameRunning = true;
+    power = 99;
+    timeHour = 0;
+    bonniePos = chicaPos = foxyPos = freddyPos = 0;
+    leftDoorClosed = rightDoorClosed = leftLightOn = rightLightOn = cameraOn = false;
+    updatePowerUsage();
 
-// タッチ & クリック共通処理
-function handleInput(e) {
-    if (!gameActive) return;
-    e.preventDefault();
-
-    const x = (e.touches ? e.touches[0].clientX : e.clientX);
-    const half = window.innerWidth / 2;
-
-    if (x < half) {
-        isLeftClosed = !isLeftClosed;
-    } else {
-        isRightClosed = !isRightClosed;
-    }
-    updateDoors();
-}
-
-document.addEventListener('click', handleInput);
-document.addEventListener('touchstart', handleInput, {passive: false});
-
-function start() {
-    startScr.style.display = 'none';
-    gameActive = true;
-    power = 100;
-    hour = 0;
-    enemyAt = 0;
-    isLeftClosed = isRightClosed = false;
-    updateDoors();
-    powerEl.textContent = "電力: 100%";
-    timeEl.textContent = "12 AM";
-    jump.style.opacity = 0;
-
-    setInterval(tick, 1000 / 4);  // スムーズに
+    setInterval(gameLoop, 250); // 4fpsで更新（オリジナルに近い）
 }
 </script>
 </body>
