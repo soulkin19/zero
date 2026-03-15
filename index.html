@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>航空戦ゲーム - 操作性向上版</title>
+    <title>航空戦ゲーム - 調整版</title>
     <style>
         body {
             margin: 0;
@@ -15,7 +15,7 @@
             overflow: hidden;
             touch-action: none;
         }
-        #menu { /* 変更なし */ 
+        #menu {
             position: absolute;
             inset: 0;
             background: rgba(0, 50, 100, 0.95);
@@ -179,7 +179,7 @@
         let firePressed = false;
         let bombPressed = false;
 
-        const fighters = [ /* 変更なし */ 
+        const fighters = [
             {name: "零戦", armor: 75, speed: 6.5, fireRate: 12},
             {name: "IL-2 (1942)", armor: 130, speed: 5.0, fireRate: 8},
             {name: "Yak-3", armor: 65, speed: 7.5, fireRate: 14},
@@ -192,7 +192,7 @@
             {name: "Tempest Mk.V", armor: 82, speed: 7.2, fireRate: 13}
         ];
 
-        const bombers = [ /* 変更なし */ 
+        const bombers = [
             {name: "Catalina", armor: 160, speed: 4.0, fireRate: 6},
             {name: "B-34 Ventura", armor: 145, speed: 4.5, fireRate: 7},
             {name: "B-17 Flying Fortress", armor: 220, speed: 3.5, fireRate: 5},
@@ -234,10 +234,10 @@
                 y: canvas.height - 100,
                 width: 48,
                 height: 42,
-                speed: selectedPlane.speed * 1.4,      // 操作性向上：全体的に速く
+                speed: selectedPlane.speed * 0.85,      // 移動速度を下げて調整（約15%減）
                 health: selectedPlane.armor,
                 maxHealth: selectedPlane.armor,
-                fireRate: selectedPlane.fireRate * 1.15 // 少し連射しやすく
+                fireRate: selectedPlane.fireRate * 1.15
             };
 
             if (mode === 'fighter') {
@@ -309,23 +309,13 @@
         function drawPlane(x, y, w, h, mainColor, wingColor, isPlayer, isAlly) {
             ctx.save();
             ctx.translate(x + w/2, y + h/2);
-
-            // 胴体
             ctx.fillStyle = mainColor;
             ctx.fillRect(-8, -h/2, 16, h);
-
-            // 主翼（色分けで区別）
             ctx.fillStyle = wingColor;
             ctx.fillRect(-w/2 + 4, -8, w - 8, 16);
-
-            // 尾翼
             ctx.fillRect(-16, h/2 - 12, 32, 10);
-
-            // プロペラ（回転風）
             ctx.fillStyle = '#ffff88';
             ctx.fillRect(-5, -h/2 - 12, 10, 20);
-
-            // プレイヤー：緑＋白ライン
             if (isPlayer) {
                 ctx.strokeStyle = '#ffffff';
                 ctx.lineWidth = 3;
@@ -334,8 +324,6 @@
                 ctx.lineTo(w/2, 0);
                 ctx.stroke();
             }
-
-            // 味方：青or橙＋大きな円マーク
             if (isAlly) {
                 ctx.fillStyle = 'rgba(255,255,255,0.7)';
                 ctx.beginPath();
@@ -346,11 +334,10 @@
                 ctx.arc(0, 0, 8, 0, Math.PI*2);
                 ctx.fill();
             }
-
             ctx.restore();
         }
 
-        // モバイルコントロール（操作性向上）
+        // ジョイスティック
         const joystickEl = document.getElementById('virtual-joystick');
         const knob = document.getElementById('joystick-knob');
         const fireBtn = document.getElementById('fire-btn');
@@ -387,7 +374,6 @@
         bombBtn.addEventListener('touchend',   () => bombPressed = false);
         bombBtn.addEventListener('touchcancel', () => bombPressed = false);
 
-        // PCキーも残す
         let keys = {};
         window.addEventListener('keydown', e => { keys[e.key] = true; if (e.key === ' ') e.preventDefault(); });
         window.addEventListener('keyup',   e => { keys[e.key] = false; });
@@ -396,11 +382,11 @@
             if (!gameRunning) return;
             const now = Date.now();
 
-            // 移動（モバイル優先）
+            // 移動計算（ジョイスティック優先、射撃中でも移動可能に）
             let moveX = joystick.dx * player.speed * 2.2;
             let moveY = joystick.dy * player.speed * 2.2;
 
-            // PCキー補助
+            // PCキー
             if (keys['ArrowLeft'] || keys['a']) moveX -= player.speed;
             if (keys['ArrowRight']|| keys['d']) moveX += player.speed;
             if (keys['ArrowUp']   || keys['w']) moveY -= player.speed;
@@ -410,9 +396,9 @@
             player.y += moveY;
 
             player.x = Math.max(20, Math.min(canvas.width - player.width - 20, player.x));
-            player.y = Math.max(20, Math.min(canvas.height - player.height - 80, player.y)); // 下にUIがあるので余裕を持たせる
+            player.y = Math.max(20, Math.min(canvas.height - player.height - 80, player.y));
 
-            // 射撃（押しっぱなし可）
+            // 射撃（押しっぱなしで連射）
             const shotInterval = 1000 / player.fireRate;
             if ((firePressed || keys[' '] || keys['z']) && now - lastShot > shotInterval) {
                 bullets.push({ x: player.x + player.width/2 - 4, y: player.y + 4, dy: -13, isBomb: false });
@@ -425,7 +411,6 @@
                 lastBomb = now;
             }
 
-            // 以下は元のゲームロジック（省略せず維持）
             gameTime++;
 
             for (let i = bullets.length - 1; i >= 0; i--) {
@@ -465,7 +450,6 @@
                 if (eb.y > canvas.height + 30) enemyBullets.splice(i,1);
             }
 
-            // 衝突判定（省略せず）
             for (let i = bullets.length - 1; i >= 0; i--) {
                 let b = bullets[i];
                 for (let j = enemies.length - 1; j >= 0; j--) {
@@ -527,7 +511,6 @@
                 }
             }
 
-            // 味方移動
             if (mode === 'fighter') {
                 ally.x += ally.speed;
                 if (ally.x > canvas.width + 40) ally.x = canvas.width + 40;
@@ -536,7 +519,6 @@
                 ally.y = player.y - 120;
             }
 
-            // クリア判定
             if (mode === 'fighter' && gameTime > 3600 && ally.health > 0) return endGame(true);
             if (ally.health <= 0) return endGame(false);
 
@@ -548,16 +530,13 @@
             ctx.fillStyle = (mapType === 'pacific') ? '#7dd3fc' : '#a3c9e0';
             ctx.fillRect(0,0,canvas.width,canvas.height);
 
-            // 雲
             ctx.fillStyle = 'rgba(255,255,255,0.65)';
             ctx.fillRect(canvas.width*0.08, canvas.height*0.12, 220, 45);
             ctx.fillRect(canvas.width*0.55, canvas.height*0.22, 190, 38);
             ctx.fillRect(canvas.width*0.78, canvas.height*0.08, 140, 50);
 
-            // プレイヤー（緑＋白ライン）
             drawPlane(player.x, player.y, player.width, player.height, '#00ff44', '#009922', true, false);
 
-            // 味方（青/橙＋白丸）
             const allyMain = mode === 'fighter' ? '#00aaff' : '#ffaa00';
             const allyWing = mode === 'fighter' ? '#0088cc' : '#cc8800';
             drawPlane(ally.x, ally.y, ally.width, ally.height, allyMain, allyWing, false, true);
@@ -573,7 +552,6 @@
                 ctx.fillRect(target.x, target.y - 16, target.width * hp, 10);
             }
 
-            // 弾
             ctx.fillStyle = '#ffffff';
             for (let b of bullets) if (!b.isBomb) ctx.fillRect(b.x, b.y, 8, 18);
 
@@ -589,12 +567,10 @@
             ctx.fillStyle = '#ff4444';
             for (let eb of enemyBullets) ctx.fillRect(eb.x - 3, eb.y, 6, 16);
 
-            // 敵（赤＋黒ライン）
             for (let e of enemies) {
                 drawPlane(e.x, e.y, e.width, e.height, '#ff3333', '#aa0000', false, false);
             }
 
-            // HPバー（大きめ・目立つ色）
             let php = Math.max(0, player.health / player.maxHealth);
             ctx.fillStyle = php > 0.5 ? '#44ff44' : php > 0.25 ? '#ffaa00' : '#ff4444';
             ctx.fillRect(player.x - 4, player.y - 20, player.width + 8, 10);
@@ -607,7 +583,6 @@
             ctx.fillRect(ally.x - 4, ally.y - 20, ally.width + 8, 10);
             ctx.strokeRect(ally.x - 4, ally.y - 20, ally.width + 8, 10);
 
-            // UI
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 28px sans-serif';
             ctx.fillText(`時間 ${Math.floor(gameTime/60)}`, 24, 50);
