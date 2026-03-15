@@ -3,103 +3,88 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FNAF1 再現ミニ - 短縮版</title>
+<title>FNAFミニ - 超簡単＆コンパクト版</title>
 <style>
     body {
         margin:0; padding:0; height:100vh; background:#000; overflow:hidden;
         font-family:Arial, sans-serif; color:#0f0; touch-action:manipulation;
-        user-select:none; image-rendering:pixelated;
+        user-select:none;
     }
-    #office {
-        position:absolute; inset:0; background:#0a0a0a;
-        background: linear-gradient(#111 30%, #000 100%);
+    #container {
+        max-width: 600px;
+        margin: 0 auto;
+        height: 100%;
+        position: relative;
+        background: #0a0a0a;
     }
     .door {
-        position:absolute; top:0; height:100%; width:35%; background:#222;
-        transition:transform 0.4s, box-shadow 0.3s; box-shadow:inset 0 0 60px #000;
+        position:absolute; top:0; height:100%; width:40%; background:#222;
+        transition:transform 0.5s; box-shadow:inset 0 0 40px #000;
         border:2px solid #444;
     }
     #left-door  { left:0;  transform:translateX(-100%); }
     #right-door { right:0; transform:translateX(100%); }
-    .closed { transform:translateX(0)!important; background:#111; box-shadow:0 0 80px #c00, inset 0 0 120px #000; border-color:#800; }
+    .closed { transform:translateX(0)!important; background:#111; box-shadow:0 0 60px #800; }
 
-    .light-btn, .door-btn {
-        position:absolute; bottom:8%; width:18%; height:14%; background:rgba(0,0,0,0.6);
-        border:3px solid #0f0; color:#0f0; font-size:1.1rem; font-weight:bold;
-        display:flex; align-items:center; justify-content:center; cursor:pointer;
-        transition:0.2s; z-index:10;
+    .btn {
+        position:absolute; bottom:5%; width:22%; height:16%;
+        background:rgba(0,0,0,0.7); border:3px solid #0f0; color:#0f0;
+        font-size:1.2rem; font-weight:bold; display:flex; align-items:center;
+        justify-content:center; cursor:pointer; transition:0.2s; z-index:10;
     }
-    .light-btn:active, .door-btn:active { background:#0f0; color:#000; }
-    #left-light   { left:2%;  }
-    #right-light  { right:2%; }
-    #left-door-btn  { left:22%; }
-    #right-door-btn { right:22%; }
-
-    #cam-overlay {
-        position:absolute; inset:0; background:rgba(0,0,0,0.85); color:#0f0;
-        display:none; flex-direction:column; align-items:center; justify-content:center;
-        font-family:monospace; font-size:1.3rem; z-index:5; pointer-events:none;
+    .btn:active { background:#0f0; color:#000; }
+    #left-door-btn  { left:8%; }
+    #right-door-btn { right:8%; }
+    #cam-btn {
+        bottom:22%; left:50%; transform:translateX(-50%);
+        width:30%; height:12%; font-size:1.1rem;
     }
-    #cam-name { font-size:2.2rem; margin:10px; text-shadow:0 0 10px #0f0; }
 
     #hud {
-        position:absolute; top:0; left:0; right:0; padding:8px 12px;
-        display:flex; justify-content:space-between; font-size:1.2rem;
-        background:rgba(0,0,0,0.5); z-index:20; pointer-events:none;
+        position:absolute; top:0; left:0; right:0; padding:8px;
+        display:flex; justify-content:space-between; font-size:1.1rem;
+        background:rgba(0,0,0,0.6); z-index:20; pointer-events:none;
     }
-    #power-usage {
-        position:absolute; bottom:2%; left:50%; transform:translateX(-50%);
-        font-size:1.4rem; color:#f33; text-shadow:0 0 10px #800;
-    }
-    #time { font-size:2.8rem; color:#f44; text-shadow:0 0 20px #800; }
+    #time { position:absolute; bottom:40%; left:50%; transform:translateX(-50%);
+            font-size:2.4rem; color:#f66; text-shadow:0 0 15px #800; z-index:5; }
 
     #jumpscare {
         position:absolute; inset:0; background:#000; opacity:0;
-        transition:opacity 0.15s; z-index:999; pointer-events:none;
-        display:flex; align-items:center; justify-content:center; font-size:80px; color:#f00;
+        transition:opacity 0.2s; z-index:999; pointer-events:none;
+        display:flex; align-items:center; justify-content:center;
+        font-size:60px; color:#f00;
     }
     #start {
         position:absolute; inset:0; background:rgba(0,0,0,0.9); z-index:1000;
         display:flex; flex-direction:column; align-items:center; justify-content:center; gap:30px;
-        color:#0f0; font-size:2.5rem;
+        color:#0f0; font-size:2.2rem;
     }
-    button { padding:16px 48px; font-size:1.8rem; background:#000; color:#0f0; border:4px solid #0f0; }
-    button:active { background:#0f0; color:#000; }
 </style>
 </head>
 <body>
 
-<div id="office">
+<div id="container">
     <div id="left-door"  class="door"></div>
     <div id="right-door" class="door"></div>
 
     <div id="hud">
-        <div>NIGHT 1</div>
+        <div>NIGHT 1 EASY</div>
         <div id="power">電力: 99%</div>
     </div>
 
     <div id="time">12 AM</div>
-    <div id="power-usage">電力使用: ■</div>
 
-    <!-- コントロール -->
-    <div id="left-light"   class="light-btn">左ライト</div>
-    <div id="right-light"  class="light-btn">右ライト</div>
-    <div id="left-door-btn"  class="door-btn">左ドア</div>
-    <div id="right-door-btn" class="door-btn">右ドア</div>
+    <!-- コントロール（シンプルにドア＋カメラだけ） -->
+    <div id="left-door-btn"  class="btn">左ドア</div>
+    <div id="right-door-btn" class="btn">右ドア</div>
+    <div id="cam-btn"        class="btn">カメラ</div>
 
-    <!-- カメラ画面 -->
-    <div id="cam-overlay">
-        <div id="cam-name">CAM 01 - STAGE</div>
-        <div>Bonnie: ---   Chica: ---</div>
-        <div>Foxy: ----   Freddy: ---</div>
-    </div>
-
-    <div id="jumpscare">JUMPSCARE!</div>
+    <div id="jumpscare">やられた！</div>
 </div>
 
 <div id="start">
-    <div>FNAF1 再現ミニ（短縮版）</div>
-    <button onclick="startGame()">夜を始める</button>
+    <div>超簡単FNAFミニ</div>
+    <button onclick="startGame()" style="padding:14px 40px; font-size:1.6rem; background:#000; color:#0f0; border:3px solid #0f0;">はじめる</button>
 </div>
 
 <script>
@@ -108,168 +93,22 @@ let timeHour = 0;
 let gameRunning = false;
 let leftDoorClosed  = false;
 let rightDoorClosed = false;
-let leftLightOn     = false;
-let rightLightOn    = false;
 let cameraOn        = false;
 
-let bonniePos = 0;  // 0=ステージ ~ 6=オフィス左
-let chicaPos  = 0;  // 0=ステージ ~ 6=オフィス右
-let foxyPos   = 0;  // 0=隠れ ~ 4=カーテン外 → 突進
-let freddyPos = 0;
+let enemyPos = 0;  // 0〜5（5で攻撃）
 
-const powerEl     = document.getElementById('power');
-const usageEl     = document.getElementById('power-usage');
-const timeEl      = document.getElementById('time');
-const camOverlay  = document.getElementById('cam-overlay');
-const jumpscare   = document.getElementById('jumpscare');
-const startScreen = document.getElementById('start');
+const powerEl    = document.getElementById('power');
+const timeEl     = document.getElementById('time');
+const jumpscare  = document.getElementById('jumpscare');
+const startScr   = document.getElementById('start');
+const leftDoorEl = document.getElementById('left-door');
+const rightDoorEl= document.getElementById('right-door');
+const camBtn     = document.getElementById('cam-btn');
 
-const leftDoorEl  = document.getElementById('left-door');
-const rightDoorEl = document.getElementById('right-door');
-
-function updatePowerUsage() {
-    let bars = 1; // ファン常時
-    if (leftDoorClosed)  bars++;
-    if (rightDoorClosed) bars++;
-    if (leftLightOn || rightLightOn) bars++;
-    if (cameraOn) bars += 2;
-
-    const barStr = '■'.repeat(Math.min(bars,4)) + '□'.repeat(4-Math.min(bars,4));
-    usageEl.textContent = `電力使用: ${barStr}`;
-    return bars;
+function updateDoors() {
+    leftDoorEl.classList.toggle('closed', leftDoorClosed);
+    rightDoorEl.classList.toggle('closed', rightDoorClosed);
 }
 
 function drainPower() {
-    const bars = updatePowerUsage();
-    let drainRate;
-
-    if      (bars === 1) drainRate = 0.13;   // 短縮版なので全体的に消費を少し速めに
-    else if (bars === 2) drainRate = 0.28;
-    else if (bars === 3) drainRate = 0.55;
-    else                 drainRate = 1.10;
-
-    power -= drainRate;
-    if (power <= 0) {
-        power = 0;
-        gameOver();
-        return;
-    }
-    powerEl.textContent = `電力: ${Math.floor(power)}%`;
-}
-
-function gameOver() {
-    gameRunning = false;
-    leftDoorEl.classList.remove('closed');
-    rightDoorEl.classList.remove('closed');
-
-    jumpscare.textContent = "♪♪♪ ... POWER OUT";
-    jumpscare.style.opacity = 1;
-    setTimeout(() => {
-        alert("電力切れ... GAME OVER");
-        location.reload();
-    }, 2200);
-}
-
-function checkAttack() {
-    if (bonniePos >= 5 && !leftDoorClosed) {
-        jumpscare.textContent = "BONNIE";
-        jumpscare.style.opacity = 1;
-        setTimeout(gameOver, 400);
-        return true;
-    }
-    if (chicaPos >= 5 && !rightDoorClosed) {
-        jumpscare.textContent = "CHICA";
-        jumpscare.style.opacity = 1;
-        setTimeout(gameOver, 400);
-        return true;
-    }
-    if (foxyPos >= 4 && Math.random() < 0.4 && !cameraOn) {
-        jumpscare.textContent = "FOXY RUN!";
-        jumpscare.style.opacity = 1;
-        setTimeout(gameOver, 600);
-        return true;
-    }
-    return false;
-}
-
-function aiTick() {
-    if (!gameRunning) return;
-
-    // 短縮版なので移動もやや速めに（緊張感UP）
-    if (Math.random() < 0.16 + timeHour*0.04) bonniePos = Math.min(bonniePos+1, 6);
-    if (Math.random() < 0.14 + timeHour*0.035) chicaPos  = Math.min(chicaPos +1, 6);
-    if (Math.random() < 0.11 + timeHour*0.05 && foxyPos < 4) foxyPos++;
-
-    if (Math.random() < 0.06 + timeHour*0.02) freddyPos++;
-
-    if (cameraOn) {
-        if (Math.random() < 0.40) foxyPos = Math.max(0, foxyPos-1);
-        if (Math.random() < 0.30) freddyPos = Math.max(0, freddyPos-1);
-    }
-
-    checkAttack();
-}
-
-function gameLoop() {
-    if (!gameRunning) return;
-
-    drainPower();
-    aiTick();
-
-    // ここを変更：約5分で6AMになるように加速
-    timeHour += 1 / (60 * 5);  // 5分 = 300秒で6時間進行
-
-    const h = Math.floor(timeHour) + 12;
-    timeEl.textContent = `${h%12||12} ${h<18?'AM':'PM'}`;
-
-    if (timeHour >= 6) {
-        gameRunning = false;
-        alert("6 AM... 生き延びた！");
-        location.reload();
-    }
-}
-
-function toggleLeftDoor()  { 
-    leftDoorClosed  = !leftDoorClosed;  
-    leftDoorEl.classList.toggle('closed', leftDoorClosed); 
-}
-function toggleRightDoor() { 
-    rightDoorClosed = !rightDoorClosed; 
-    rightDoorEl.classList.toggle('closed', rightDoorClosed); 
-}
-function toggleLeftLight() { leftLightOn = !leftLightOn; }
-function toggleRightLight(){ rightLightOn= !rightLightOn; }
-
-function toggleCamera() {
-    cameraOn = !cameraOn;
-    camOverlay.style.display = cameraOn ? 'flex' : 'none';
-}
-
-document.getElementById('left-door-btn').addEventListener('pointerdown', toggleLeftDoor);
-document.getElementById('right-door-btn').addEventListener('pointerdown', toggleRightDoor);
-document.getElementById('left-light').addEventListener('pointerdown', toggleLeftLight);
-document.getElementById('right-light').addEventListener('pointerdown', toggleRightLight);
-
-document.addEventListener('pointerdown', e => {
-    if (!gameRunning) return;
-    if (e.target.tagName === 'BUTTON' || e.target.classList.contains('light-btn') || e.target.classList.contains('door-btn')) return;
-
-    if (Math.abs(e.clientX - window.innerWidth/2) < 80 && Math.abs(e.clientY - window.innerHeight/2) < 120) {
-        toggleCamera();
-    }
-});
-
-function startGame() {
-    startScreen.style.display = 'none';
-    gameRunning = true;
-    power = 99;
-    timeHour = 0;
-    bonniePos = chicaPos = foxyPos = freddyPos = 0;
-    leftDoorClosed = rightDoorClosed = leftLightOn = rightLightOn = cameraOn = false;
-    updatePowerUsage();
-
-    setInterval(gameLoop, 250);
-}
-</script>
-</body>
-</html>
+    let drain = 0
