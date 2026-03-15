@@ -1,611 +1,263 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>航空戦ゲーム - 調整版</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            color: #fff;
-            font-family: "MS Gothic", "Hiragino Sans", sans-serif;
-            text-align: center;
-            overflow: hidden;
-            touch-action: none;
-        }
-        #menu {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 50, 100, 0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-        h1 { font-size: clamp(32px, 8vw, 48px); margin: 20px 0; text-shadow: 0 0 10px #0ff; }
-        label { font-size: clamp(18px, 5vw, 24px); margin: 12px 0 4px; }
-        select, button {
-            font-size: clamp(16px, 4.5vw, 22px);
-            padding: 10px 20px;
-            margin: 8px;
-            width: 80%;
-            max-width: 360px;
-            background: #112;
-            color: #0ff;
-            border: 2px solid #0ff;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-        button { cursor: pointer; background: #0a0; color: white; border-color: #0f0; }
-        button:hover, button:active { background: #0f0; color: #000; }
-
-        #game {
-            display: none;
-            width: 100vw;
-            height: 100vh;
-            background: #87CEEB;
-        }
-
-        #instructions {
-            position: absolute;
-            bottom: 140px;
-            left: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.6);
-            padding: 8px;
-            font-size: clamp(14px, 3.5vw, 18px);
-            border-radius: 5px;
-            pointer-events: none;
-        }
-
-        #virtual-joystick {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 140px;
-            height: 140px;
-            background: rgba(255,255,255,0.18);
-            border: 2px solid rgba(0,255,255,0.3);
-            border-radius: 50%;
-            touch-action: none;
-            z-index: 5;
-            display: none;
-        }
-        #joystick-knob {
-            position: absolute;
-            width: 70px;
-            height: 70px;
-            background: rgba(0,255,255,0.7);
-            border: 2px solid #0ff;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            box-shadow: 0 0 15px #0ff;
-        }
-
-        #fire-btn, #bomb-btn {
-            position: absolute;
-            bottom: 30px;
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            color: white;
-            font-size: 22px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: manipulation;
-            z-index: 5;
-            user-select: none;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-        }
-        #fire-btn {
-            right: 30px;
-            background: rgba(0,180,0,0.75);
-            border: 4px solid #0f0;
-        }
-        #bomb-btn {
-            right: 150px;
-            background: rgba(180,0,0,0.75);
-            border: 4px solid #f00;
-            display: none;
-        }
-        #fire-btn:active, #bomb-btn:active {
-            transform: scale(1.15);
-            opacity: 0.85;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>五夜の警備員 - モバイル対応版</title>
+<style>
+    body {
+        margin:0;
+        height:100vh;
+        background:#000;
+        font-family: Arial, sans-serif;
+        color:#0f3;
+        overflow:hidden;
+        touch-action: none;          /* スマホのピンチズーム等を防ぐ */
+        user-select: none;
+    }
+    #game {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: #111 radial-gradient(circle at 50% 30%, #222 0%, #000 70%);
+    }
+    #office {
+        position: absolute;
+        inset:0;
+        background: linear-gradient(#1a1a1a, #000);
+        filter: brightness(0.5);
+    }
+    .door {
+        position: absolute;
+        top: 0;
+        width: 38%;
+        height: 100%;
+        background: #1e1e1e;
+        transition: all 0.6s ease;
+        box-shadow: inset 0 0 80px #000;
+        border: 2px solid #333;
+    }
+    #left-door  { left:0; transform: translateX(-100%); }
+    #right-door { right:0; transform: translateX(100%); }
+    .closed {
+        transform: translateX(0) !important;
+        background: #0a0a0a;
+        box-shadow: inset 0 0 140px #000, 0 0 60px #c00;
+        border-color: #c00;
+    }
+    #hud {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.3rem;
+        background: rgba(0,0,0,0.5);
+        z-index: 10;
+        pointer-events: none;
+    }
+    #time {
+        position: absolute;
+        bottom: 8%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 3.2rem;
+        font-weight: bold;
+        color: #f33;
+        text-shadow: 0 0 30px #800, 0 0 60px #400;
+        z-index: 5;
+        pointer-events: none;
+    }
+    #jump {
+        position: absolute;
+        inset:0;
+        background:#000 url('https://via.placeholder.com/800x600/000/800?text=JUMPSCARE!') center/contain no-repeat;
+        opacity: 0;
+        transition: opacity 0.2s;
+        z-index: 999;
+        pointer-events: none;
+    }
+    #start {
+        position: absolute;
+        inset:0;
+        background: rgba(0,0,0,0.92);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        z-index: 1000;
+        color: #0f3;
+        font-size: 2.8rem;
+    }
+    button {
+        padding: 18px 50px;
+        font-size: 2rem;
+        background: #000;
+        color: #0f3;
+        border: 4px solid #0f3;
+        cursor: pointer;
+        transition: 0.25s;
+    }
+    button:active, button:hover {
+        background: #0f3;
+        color: #000;
+        box-shadow: 0 0 40px #0f3;
+    }
+    /* タッチエリアの視覚的ヒント（オプション） */
+    .touch-hint {
+        position: absolute;
+        top: 40%;
+        font-size: 1.1rem;
+        color: rgba(0,255,51,0.4);
+        pointer-events: none;
+        z-index: 8;
+    }
+    #left-hint  { left: 10%; }
+    #right-hint { right: 10%; }
+</style>
 </head>
 <body>
-    <div id="menu">
-        <h1>✈️ 航空戦ゲーム ✈️</h1>
-        <label>モードを選択</label>
-        <select id="mode">
-            <option value="fighter">戦闘機モード（味方爆撃機を護衛）</option>
-            <option value="bomber">爆撃機モード（目的地を爆撃）</option>
-        </select>
 
-        <label>機体を選択（装甲が違う！）</label>
-        <select id="planeSelect"></select>
-
-        <label>難易度</label>
-        <select id="difficulty">
-            <option value="easy">簡単</option>
-            <option value="medium" selected>普通</option>
-            <option value="hard">難しい</option>
-        </select>
-
-        <label>マップ</label>
-        <select id="map">
-            <option value="pacific">太平洋（青空）</option>
-            <option value="europe">ヨーロッパ（薄曇り）</option>
-        </select>
-
-        <button onclick="startGame()">ゲーム開始！</button>
+<div id="game">
+    <div id="office"></div>
+    <div id="left-door"  class="door"></div>
+    <div id="right-door" class="door"></div>
+    
+    <div id="hud">
+        <div>NIGHT 1</div>
+        <div id="power">電力: 100%</div>
     </div>
+    
+    <div id="time">12 AM</div>
+    
+    <div id="jump"></div>
+    
+    <div class="touch-hint" id="left-hint">← 左ドア タップ</div>
+    <div class="touch-hint" id="right-hint">右ドア タップ →</div>
+</div>
 
-    <canvas id="game"></canvas>
+<div id="start">
+    <div>五夜の警備員<br><small style="font-size:1.1rem;opacity:0.7;">モバイル対応版</small></div>
+    <button onclick="start()">START</button>
+</div>
 
-    <div id="instructions" style="display:none;">
-        左下の丸をドラッグ → 移動<br>
-        右下の緑ボタン → 機銃射撃（押し続けてもOK）<br>
-        爆撃機モード時は赤ボタン → 爆弾投下
-    </div>
+<script>
+let power = 100;
+let hour = 0;
+let isLeftClosed  = false;
+let isRightClosed = false;
+let gameActive = false;
+let enemyAt   = 0;     // 0=遠く ... 3=ドア前
+let enemySide = 'left';
 
-    <div id="virtual-joystick">
-        <div id="joystick-knob"></div>
-    </div>
-    <div id="fire-btn">射撃</div>
-    <div id="bomb-btn">爆弾</div>
+const leftDoor  = document.getElementById('left-door');
+const rightDoor = document.getElementById('right-door');
+const powerEl   = document.getElementById('power');
+const timeEl    = document.getElementById('time');
+const jump      = document.getElementById('jump');
+const startScr  = document.getElementById('start');
 
-    <script>
-        const canvas = document.getElementById('game');
-        const ctx = canvas.getContext('2d');
-        let mode, selectedPlane, difficulty, mapType;
-        let player = {}, ally = {}, target = null;
-        let bullets = [], enemyBullets = [], enemies = [];
-        let lastShot = 0, lastBomb = 0;
-        let gameTime = 0, score = 0, spawnTimer = 0;
-        let gameRunning = false;
+function updateDoors() {
+    leftDoor.classList.toggle('closed', isLeftClosed);
+    rightDoor.classList.toggle('closed', isRightClosed);
+}
 
-        // モバイルコントロール
-        let joystick = { active: false, dx: 0, dy: 0 };
-        let firePressed = false;
-        let bombPressed = false;
+function drain(amount) {
+    power -= amount;
+    if (power < 0) power = 0;
+    powerEl.textContent = `電力: ${Math.floor(power)}%`;
+    if (power <= 0) endGame(false);
+}
 
-        const fighters = [
-            {name: "零戦", armor: 75, speed: 6.5, fireRate: 12},
-            {name: "IL-2 (1942)", armor: 130, speed: 5.0, fireRate: 8},
-            {name: "Yak-3", armor: 65, speed: 7.5, fireRate: 14},
-            {name: "Spitfire Mk.V", armor: 85, speed: 6.8, fireRate: 11},
-            {name: "P-51 Mustang", armor: 90, speed: 6.2, fireRate: 10},
-            {name: "Bf 109 G", armor: 80, speed: 7.0, fireRate: 13},
-            {name: "Fw 190 A", armor: 95, speed: 5.8, fireRate: 9},
-            {name: "Ki-84 疾風", armor: 88, speed: 6.5, fireRate: 12},
-            {name: "P-38 Lightning", armor: 105, speed: 5.5, fireRate: 8},
-            {name: "Tempest Mk.V", armor: 82, speed: 7.2, fireRate: 13}
-        ];
+function endGame(won = false) {
+    gameActive = false;
+    if (!won) {
+        jump.style.opacity = 1;
+        setTimeout(() => {
+            alert("…やられた GAME OVER");
+            location.reload();
+        }, 1800);
+    } else {
+        alert("6 AM！ 生き延びた！");
+        location.reload();
+    }
+}
 
-        const bombers = [
-            {name: "Catalina", armor: 160, speed: 4.0, fireRate: 6},
-            {name: "B-34 Ventura", armor: 145, speed: 4.5, fireRate: 7},
-            {name: "B-17 Flying Fortress", armor: 220, speed: 3.5, fireRate: 5},
-            {name: "Lancaster", armor: 190, speed: 4.0, fireRate: 6},
-            {name: "He 111", armor: 135, speed: 4.3, fireRate: 7}
-        ];
+function aiMove() {
+    if (!gameActive) return;
 
-        function updatePlaneOptions() {
-            const modeVal = document.getElementById('mode').value;
-            const select = document.getElementById('planeSelect');
-            select.innerHTML = '';
-            const list = (modeVal === 'fighter') ? fighters : bombers;
-            list.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.name;
-                opt.textContent = `${p.name}（装甲 ${p.armor}）`;
-                select.appendChild(opt);
-            });
-        }
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        function startGame() {
-            mode = document.getElementById('mode').value;
-            const planeName = document.getElementById('planeSelect').value;
-            difficulty = document.getElementById('difficulty').value;
-            mapType = document.getElementById('map').value;
-
-            const list = (mode === 'fighter') ? fighters : bombers;
-            selectedPlane = list.find(p => p.name === planeName);
-
-            player = {
-                x: canvas.width / 2 - 20,
-                y: canvas.height - 100,
-                width: 48,
-                height: 42,
-                speed: selectedPlane.speed * 0.85,      // 移動速度を下げて調整（約15%減）
-                health: selectedPlane.armor,
-                maxHealth: selectedPlane.armor,
-                fireRate: selectedPlane.fireRate * 1.15
-            };
-
-            if (mode === 'fighter') {
-                ally = {
-                    x: canvas.width * 0.25,
-                    y: canvas.height * 0.35,
-                    width: 68,
-                    height: 48,
-                    health: 220,
-                    maxHealth: 220,
-                    speed: 2.0
-                };
+    if (Math.random() < 0.16 + hour * 0.035) {
+        if (enemyAt < 3) {
+            enemyAt++;
+        } else {
+            const closed = enemySide === 'left' ? isLeftClosed : isRightClosed;
+            if (!closed) {
+                endGame(false);
+                return;
             } else {
-                ally = {
-                    x: canvas.width * 0.6,
-                    y: canvas.height - 220,
-                    width: 48,
-                    height: 40,
-                    health: 140,
-                    maxHealth: 140,
-                    speed: 6.0
-                };
-                document.getElementById('bomb-btn').style.display = 'flex';
+                enemyAt = Math.random() < 0.6 ? 0 : 1;
             }
-
-            if (mode === 'bomber') {
-                target = {
-                    x: canvas.width * 0.7,
-                    y: canvas.height - 140,
-                    width: 140,
-                    height: 70,
-                    health: 320,
-                    maxHealth: 320
-                };
-            }
-
-            bullets = []; enemyBullets = []; enemies = [];
-            gameTime = score = spawnTimer = 0;
-            lastShot = lastBomb = Date.now();
-
-            for (let i = 0; i < (difficulty === 'easy' ? 4 : 6); i++) spawnEnemy();
-
-            document.getElementById('menu').style.display = 'none';
-            canvas.style.display = 'block';
-            document.getElementById('instructions').style.display = 'block';
-            document.getElementById('virtual-joystick').style.display = 'block';
-            document.getElementById('fire-btn').style.display = 'flex';
-
-            gameRunning = true;
-            requestAnimationFrame(gameLoop);
         }
-
-        function spawnEnemy() {
-            const ex = Math.random() * (canvas.width - 50);
-            enemies.push({
-                x: ex,
-                y: -50,
-                width: 50,
-                height: 38,
-                health: (difficulty === 'easy') ? 50 : (difficulty === 'medium') ? 80 : 120
-            });
+        if (Math.random() < 0.28) {
+            enemySide = enemySide === 'left' ? 'right' : 'left';
         }
+    }
+}
 
-        function collide(a, b) {
-            return a.x < b.x + b.width && a.x + a.width > b.x &&
-                   a.y < b.y + b.height && a.y + a.height > b.y;
-        }
+function tick() {
+    if (!gameActive) return;
 
-        function drawPlane(x, y, w, h, mainColor, wingColor, isPlayer, isAlly) {
-            ctx.save();
-            ctx.translate(x + w/2, y + h/2);
-            ctx.fillStyle = mainColor;
-            ctx.fillRect(-8, -h/2, 16, h);
-            ctx.fillStyle = wingColor;
-            ctx.fillRect(-w/2 + 4, -8, w - 8, 16);
-            ctx.fillRect(-16, h/2 - 12, 32, 10);
-            ctx.fillStyle = '#ffff88';
-            ctx.fillRect(-5, -h/2 - 12, 10, 20);
-            if (isPlayer) {
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(-w/2, 0);
-                ctx.lineTo(w/2, 0);
-                ctx.stroke();
-            }
-            if (isAlly) {
-                ctx.fillStyle = 'rgba(255,255,255,0.7)';
-                ctx.beginPath();
-                ctx.arc(0, 0, 12, 0, Math.PI*2);
-                ctx.fill();
-                ctx.fillStyle = isPlayer ? '#00ff88' : (mode === 'fighter' ? '#00aaff' : '#ffaa44');
-                ctx.beginPath();
-                ctx.arc(0, 0, 8, 0, Math.PI*2);
-                ctx.fill();
-            }
-            ctx.restore();
-        }
+    let drain = 0.9;
+    if (isLeftClosed)  drain += 3.2;
+    if (isRightClosed) drain += 3.2;
+    drain(drain);
 
-        // ジョイスティック
-        const joystickEl = document.getElementById('virtual-joystick');
-        const knob = document.getElementById('joystick-knob');
-        const fireBtn = document.getElementById('fire-btn');
-        const bombBtn = document.getElementById('bomb-btn');
+    hour += 1 / 240;   // 約4分で6時間（調整可）
+    const h = Math.floor(hour) + 12;
+    timeEl.textContent = `${h % 12 || 12} ${h < 18 ? 'AM' : 'PM'}`;
 
-        joystickEl.addEventListener('touchstart', e => { e.preventDefault(); joystick.active = true; moveJoystick(e.touches[0]); });
-        joystickEl.addEventListener('touchmove', e => { e.preventDefault(); if (joystick.active) moveJoystick(e.touches[0]); });
-        joystickEl.addEventListener('touchend', () => { joystick.active = false; joystick.dx = joystick.dy = 0; knob.style.left = knob.style.top = '50%'; });
+    if (hour >= 6) {
+        endGame(true);
+        return;
+    }
 
-        function moveJoystick(touch) {
-            const rect = joystickEl.getBoundingClientRect();
-            let dx = touch.clientX - (rect.left + rect.width/2);
-            let dy = touch.clientY - (rect.top + rect.height/2);
-            const dist = Math.hypot(dx, dy);
-            const max = 60;
+    aiMove();
+}
 
-            if (dist > max) {
-                dx *= max / dist;
-                dy *= max / dist;
-            }
+// タッチ & クリック共通処理
+function handleInput(e) {
+    if (!gameActive) return;
+    e.preventDefault();
 
-            joystick.dx = dx / max;
-            joystick.dy = dy / max;
+    const x = (e.touches ? e.touches[0].clientX : e.clientX);
+    const half = window.innerWidth / 2;
 
-            knob.style.left = `${50 + (dx / max * 45)}%`;
-            knob.style.top  = `${50 + (dy / max * 45)}%`;
-        }
+    if (x < half) {
+        isLeftClosed = !isLeftClosed;
+    } else {
+        isRightClosed = !isRightClosed;
+    }
+    updateDoors();
+}
 
-        fireBtn.addEventListener('touchstart', e => { e.preventDefault(); firePressed = true; });
-        fireBtn.addEventListener('touchend',   () => firePressed = false);
-        fireBtn.addEventListener('touchcancel', () => firePressed = false);
+document.addEventListener('click', handleInput);
+document.addEventListener('touchstart', handleInput, {passive: false});
 
-        bombBtn.addEventListener('touchstart', e => { e.preventDefault(); bombPressed = true; });
-        bombBtn.addEventListener('touchend',   () => bombPressed = false);
-        bombBtn.addEventListener('touchcancel', () => bombPressed = false);
+function start() {
+    startScr.style.display = 'none';
+    gameActive = true;
+    power = 100;
+    hour = 0;
+    enemyAt = 0;
+    isLeftClosed = isRightClosed = false;
+    updateDoors();
+    powerEl.textContent = "電力: 100%";
+    timeEl.textContent = "12 AM";
+    jump.style.opacity = 0;
 
-        let keys = {};
-        window.addEventListener('keydown', e => { keys[e.key] = true; if (e.key === ' ') e.preventDefault(); });
-        window.addEventListener('keyup',   e => { keys[e.key] = false; });
-
-        function gameLoop() {
-            if (!gameRunning) return;
-            const now = Date.now();
-
-            // 移動計算（ジョイスティック優先、射撃中でも移動可能に）
-            let moveX = joystick.dx * player.speed * 2.2;
-            let moveY = joystick.dy * player.speed * 2.2;
-
-            // PCキー
-            if (keys['ArrowLeft'] || keys['a']) moveX -= player.speed;
-            if (keys['ArrowRight']|| keys['d']) moveX += player.speed;
-            if (keys['ArrowUp']   || keys['w']) moveY -= player.speed;
-            if (keys['ArrowDown'] || keys['s']) moveY += player.speed;
-
-            player.x += moveX;
-            player.y += moveY;
-
-            player.x = Math.max(20, Math.min(canvas.width - player.width - 20, player.x));
-            player.y = Math.max(20, Math.min(canvas.height - player.height - 80, player.y));
-
-            // 射撃（押しっぱなしで連射）
-            const shotInterval = 1000 / player.fireRate;
-            if ((firePressed || keys[' '] || keys['z']) && now - lastShot > shotInterval) {
-                bullets.push({ x: player.x + player.width/2 - 4, y: player.y + 4, dy: -13, isBomb: false });
-                lastShot = now;
-            }
-
-            // 爆弾
-            if (mode === 'bomber' && (bombPressed || keys['b']) && now - lastBomb > 800) {
-                bullets.push({ x: player.x + player.width/2 - 6, y: player.y + 20, dy: 9, isBomb: true });
-                lastBomb = now;
-            }
-
-            gameTime++;
-
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                let b = bullets[i];
-                b.y += b.dy;
-                if ((!b.isBomb && b.y < -30) || (b.isBomb && b.y > canvas.height + 30)) bullets.splice(i,1);
-            }
-
-            spawnTimer++;
-            const spawnInt = (difficulty==='easy')?80:(difficulty==='medium')?45:25;
-            if (spawnTimer > spawnInt) {
-                spawnEnemy();
-                if (difficulty === 'hard') spawnEnemy();
-                spawnTimer = 0;
-            }
-
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                let e = enemies[i];
-                e.y += 3.0;
-                let tx = (mode==='fighter') ? ally.x+30 : player.x+24;
-                let ty = (mode==='fighter') ? ally.y+20 : player.y+20;
-                let dx = tx - e.x - e.width/2;
-                let dy = ty - e.y;
-                let d = Math.hypot(dx, dy) || 1;
-                e.x += (dx / d) * 1.6;
-
-                if (e.y > canvas.height + 60) { enemies.splice(i,1); continue; }
-
-                if (Math.random() < 0.022) {
-                    enemyBullets.push({x: e.x + e.width/2, y: e.y + e.height, dy: 7.5});
-                }
-            }
-
-            for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                let eb = enemyBullets[i];
-                eb.y += eb.dy;
-                if (eb.y > canvas.height + 30) enemyBullets.splice(i,1);
-            }
-
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                let b = bullets[i];
-                for (let j = enemies.length - 1; j >= 0; j--) {
-                    if (collide(b, enemies[j])) {
-                        enemies[j].health -= b.isBomb ? 50 : 30;
-                        bullets.splice(i,1);
-                        if (enemies[j].health <= 0) {
-                            enemies.splice(j,1);
-                            score += 140;
-                        }
-                        break;
-                    }
-                }
-            }
-
-            for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                let eb = enemyBullets[i];
-                if (collide(player, {x:eb.x-4, y:eb.y-4, width:8, height:8})) {
-                    player.health -= 14;
-                    enemyBullets.splice(i,1);
-                    if (player.health <= 0) return endGame(false);
-                }
-            }
-
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                if (collide(player, enemies[i])) {
-                    player.health -= 40;
-                    enemies.splice(i,1);
-                    if (player.health <= 0) return endGame(false);
-                }
-            }
-
-            if (mode === 'fighter') {
-                for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                    if (collide(ally, {x:enemyBullets[i].x-4,y:enemyBullets[i].y-4,width:8,height:8})) {
-                        ally.health -= 20;
-                        enemyBullets.splice(i,1);
-                    }
-                }
-                for (let i = enemies.length - 1; i >= 0; i--) {
-                    if (collide(ally, enemies[i])) {
-                        ally.health -= 45;
-                        enemies.splice(i,1);
-                    }
-                }
-            }
-
-            if (mode === 'bomber' && target) {
-                for (let i = bullets.length - 1; i >= 0; i--) {
-                    let b = bullets[i];
-                    if (b.isBomb && collide(b, target)) {
-                        target.health -= 55;
-                        bullets.splice(i,1);
-                        if (target.health <= 0) {
-                            score += 1000;
-                            return endGame(true);
-                        }
-                    }
-                }
-            }
-
-            if (mode === 'fighter') {
-                ally.x += ally.speed;
-                if (ally.x > canvas.width + 40) ally.x = canvas.width + 40;
-            } else {
-                ally.x += (player.x + 60 - ally.x) * 0.14;
-                ally.y = player.y - 120;
-            }
-
-            if (mode === 'fighter' && gameTime > 3600 && ally.health > 0) return endGame(true);
-            if (ally.health <= 0) return endGame(false);
-
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function draw() {
-            ctx.fillStyle = (mapType === 'pacific') ? '#7dd3fc' : '#a3c9e0';
-            ctx.fillRect(0,0,canvas.width,canvas.height);
-
-            ctx.fillStyle = 'rgba(255,255,255,0.65)';
-            ctx.fillRect(canvas.width*0.08, canvas.height*0.12, 220, 45);
-            ctx.fillRect(canvas.width*0.55, canvas.height*0.22, 190, 38);
-            ctx.fillRect(canvas.width*0.78, canvas.height*0.08, 140, 50);
-
-            drawPlane(player.x, player.y, player.width, player.height, '#00ff44', '#009922', true, false);
-
-            const allyMain = mode === 'fighter' ? '#00aaff' : '#ffaa00';
-            const allyWing = mode === 'fighter' ? '#0088cc' : '#cc8800';
-            drawPlane(ally.x, ally.y, ally.width, ally.height, allyMain, allyWing, false, true);
-
-            if (target) {
-                ctx.fillStyle = '#5c4033';
-                ctx.fillRect(target.x, target.y, target.width, target.height);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 26px sans-serif';
-                ctx.fillText('目標施設', target.x + 20, target.y + 42);
-                const hp = target.health / target.maxHealth;
-                ctx.fillStyle = hp > 0.35 ? '#22ff22' : '#ff4444';
-                ctx.fillRect(target.x, target.y - 16, target.width * hp, 10);
-            }
-
-            ctx.fillStyle = '#ffffff';
-            for (let b of bullets) if (!b.isBomb) ctx.fillRect(b.x, b.y, 8, 18);
-
-            ctx.fillStyle = '#222222';
-            for (let b of bullets) {
-                if (b.isBomb) {
-                    ctx.beginPath();
-                    ctx.arc(b.x + 4, b.y + 8, 9, 0, Math.PI*2);
-                    ctx.fill();
-                }
-            }
-
-            ctx.fillStyle = '#ff4444';
-            for (let eb of enemyBullets) ctx.fillRect(eb.x - 3, eb.y, 6, 16);
-
-            for (let e of enemies) {
-                drawPlane(e.x, e.y, e.width, e.height, '#ff3333', '#aa0000', false, false);
-            }
-
-            let php = Math.max(0, player.health / player.maxHealth);
-            ctx.fillStyle = php > 0.5 ? '#44ff44' : php > 0.25 ? '#ffaa00' : '#ff4444';
-            ctx.fillRect(player.x - 4, player.y - 20, player.width + 8, 10);
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(player.x - 4, player.y - 20, player.width + 8, 10);
-
-            let ahp = Math.max(0, ally.health / ally.maxHealth);
-            ctx.fillStyle = ahp > 0.5 ? '#44aaff' : '#ff4444';
-            ctx.fillRect(ally.x - 4, ally.y - 20, ally.width + 8, 10);
-            ctx.strokeRect(ally.x - 4, ally.y - 20, ally.width + 8, 10);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 28px sans-serif';
-            ctx.fillText(`時間 ${Math.floor(gameTime/60)}`, 24, 50);
-            ctx.fillText(`SCORE ${score}`, 24, 90);
-
-            ctx.font = '20px sans-serif';
-            ctx.fillText(mode==='fighter'?'味方爆撃機を守れ！':'目標を爆撃せよ！', canvas.width - 260, 50);
-        }
-
-        function endGame(win) {
-            gameRunning = false;
-            setTimeout(() => {
-                alert(win ? 
-                    `✈️ ミッション成功！\nスコア ${score}点` : 
-                    `💥 撃墜されました…\nスコア ${score}点`);
-                location.reload();
-            }, 400);
-        }
-
-        window.onload = () => {
-            document.getElementById('mode').addEventListener('change', updatePlaneOptions);
-            updatePlaneOptions();
-        };
-    </script>
+    setInterval(tick, 1000 / 4);  // スムーズに
+}
+</script>
 </body>
 </html>
