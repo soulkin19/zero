@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FNAF1 再現 - モバイル版</title>
+<title>FNAF1 再現ミニ - 短縮版</title>
 <style>
     body {
         margin:0; padding:0; height:100vh; background:#000; overflow:hidden;
@@ -98,7 +98,7 @@
 </div>
 
 <div id="start">
-    <div>FNAF1 再現ミニ</div>
+    <div>FNAF1 再現ミニ（短縮版）</div>
     <button onclick="startGame()">夜を始める</button>
 </div>
 
@@ -143,11 +143,10 @@ function drainPower() {
     const bars = updatePowerUsage();
     let drainRate;
 
-    // FNAF1に近い消費曲線（簡略化）
-    if      (bars === 1) drainRate = 0.08;   // 約10秒で1%
-    else if (bars === 2) drainRate = 0.18;
-    else if (bars === 3) drainRate = 0.35;
-    else                 drainRate = 0.70;
+    if      (bars === 1) drainRate = 0.13;   // 短縮版なので全体的に消費を少し速めに
+    else if (bars === 2) drainRate = 0.28;
+    else if (bars === 3) drainRate = 0.55;
+    else                 drainRate = 1.10;
 
     power -= drainRate;
     if (power <= 0) {
@@ -163,7 +162,6 @@ function gameOver() {
     leftDoorEl.classList.remove('closed');
     rightDoorEl.classList.remove('closed');
 
-    // Freddyの音楽風演出（テキストで）
     jumpscare.textContent = "♪♪♪ ... POWER OUT";
     jumpscare.style.opacity = 1;
     setTimeout(() => {
@@ -173,21 +171,18 @@ function gameOver() {
 }
 
 function checkAttack() {
-    // Bonnieが左ドアに来た
     if (bonniePos >= 5 && !leftDoorClosed) {
         jumpscare.textContent = "BONNIE";
         jumpscare.style.opacity = 1;
         setTimeout(gameOver, 400);
         return true;
     }
-    // Chicaが右ドアに来た
     if (chicaPos >= 5 && !rightDoorClosed) {
         jumpscare.textContent = "CHICA";
         jumpscare.style.opacity = 1;
         setTimeout(gameOver, 400);
         return true;
     }
-    // Foxy突進（簡易）
     if (foxyPos >= 4 && Math.random() < 0.4 && !cameraOn) {
         jumpscare.textContent = "FOXY RUN!";
         jumpscare.style.opacity = 1;
@@ -200,18 +195,16 @@ function checkAttack() {
 function aiTick() {
     if (!gameRunning) return;
 
-    // 簡易AI（オリジナルに近いランダム移動）
-    if (Math.random() < 0.12 + timeHour*0.03) bonniePos = Math.min(bonniePos+1, 6);
-    if (Math.random() < 0.10 + timeHour*0.025) chicaPos  = Math.min(chicaPos +1, 6);
-    if (Math.random() < 0.08 + timeHour*0.04 && foxyPos < 4) foxyPos++;
+    // 短縮版なので移動もやや速めに（緊張感UP）
+    if (Math.random() < 0.16 + timeHour*0.04) bonniePos = Math.min(bonniePos+1, 6);
+    if (Math.random() < 0.14 + timeHour*0.035) chicaPos  = Math.min(chicaPos +1, 6);
+    if (Math.random() < 0.11 + timeHour*0.05 && foxyPos < 4) foxyPos++;
 
-    // Freddyは遅め
-    if (Math.random() < 0.04 + timeHour*0.015) freddyPos++;
+    if (Math.random() < 0.06 + timeHour*0.02) freddyPos++;
 
-    // カメラ見てるとFoxy/Freddy抑制（オリジナル再現）
     if (cameraOn) {
-        if (Math.random() < 0.35) foxyPos = Math.max(0, foxyPos-1);
-        if (Math.random() < 0.25) freddyPos = Math.max(0, freddyPos-1);
+        if (Math.random() < 0.40) foxyPos = Math.max(0, foxyPos-1);
+        if (Math.random() < 0.30) freddyPos = Math.max(0, freddyPos-1);
     }
 
     checkAttack();
@@ -223,7 +216,9 @@ function gameLoop() {
     drainPower();
     aiTick();
 
-    timeHour += 1/ (60*8); // 約8分で6時間
+    // ここを変更：約5分で6AMになるように加速
+    timeHour += 1 / (60 * 5);  // 5分 = 300秒で6時間進行
+
     const h = Math.floor(timeHour) + 12;
     timeEl.textContent = `${h%12||12} ${h<18?'AM':'PM'}`;
 
@@ -234,12 +229,17 @@ function gameLoop() {
     }
 }
 
-function toggleLeftDoor()  { leftDoorClosed  = !leftDoorClosed;  leftDoorEl.classList.toggle('closed', leftDoorClosed); }
-function toggleRightDoor() { rightDoorClosed = !rightDoorClosed; rightDoorEl.classList.toggle('closed', rightDoorClosed); }
+function toggleLeftDoor()  { 
+    leftDoorClosed  = !leftDoorClosed;  
+    leftDoorEl.classList.toggle('closed', leftDoorClosed); 
+}
+function toggleRightDoor() { 
+    rightDoorClosed = !rightDoorClosed; 
+    rightDoorEl.classList.toggle('closed', rightDoorClosed); 
+}
 function toggleLeftLight() { leftLightOn = !leftLightOn; }
 function toggleRightLight(){ rightLightOn= !rightLightOn; }
 
-// カメラON/OFF（スペース or 画面中央長押しでも可）
 function toggleCamera() {
     cameraOn = !cameraOn;
     camOverlay.style.display = cameraOn ? 'flex' : 'none';
@@ -250,12 +250,10 @@ document.getElementById('right-door-btn').addEventListener('pointerdown', toggle
 document.getElementById('left-light').addEventListener('pointerdown', toggleLeftLight);
 document.getElementById('right-light').addEventListener('pointerdown', toggleRightLight);
 
-// 画面タップでカメラ（モバイル向け）
 document.addEventListener('pointerdown', e => {
     if (!gameRunning) return;
     if (e.target.tagName === 'BUTTON' || e.target.classList.contains('light-btn') || e.target.classList.contains('door-btn')) return;
 
-    // 画面中央付近タップ → カメラトグル
     if (Math.abs(e.clientX - window.innerWidth/2) < 80 && Math.abs(e.clientY - window.innerHeight/2) < 120) {
         toggleCamera();
     }
@@ -270,7 +268,7 @@ function startGame() {
     leftDoorClosed = rightDoorClosed = leftLightOn = rightLightOn = cameraOn = false;
     updatePowerUsage();
 
-    setInterval(gameLoop, 250); // 4fpsで更新（オリジナルに近い）
+    setInterval(gameLoop, 250);
 }
 </script>
 </body>
