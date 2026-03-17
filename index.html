@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sky Hunter Mobile</title>
+    <title>Zero Fighter: Dogfight</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; touch-action: none; font-family: sans-serif; }
+        body { margin: 0; overflow: hidden; background: #5d8aa8; touch-action: none; font-family: 'Georgia', serif; }
         canvas { display: block; }
         #ui { 
-            position: absolute; top: 10px; left: 10px; color: white; 
-            text-shadow: 1px 1px 2px black; pointer-events: none; z-index: 10;
+            position: absolute; top: 15px; left: 15px; color: #fff; 
+            text-shadow: 2px 2px 4px #000; pointer-events: none; z-index: 10;
         }
-        .instr { position: absolute; bottom: 20px; width: 100%; text-align: center; color: white; opacity: 0.7; }
+        .score-board { font-size: 24px; font-weight: bold; }
+        .hint { font-size: 12px; opacity: 0.8; }
     </style>
 </head>
 <body>
-    <div id="ui">Score: <span id="score">0</span></div>
-    <div class="instr">L-Side: Turn Left / R-Side: Turn Right / Both: Boost & Fire</div>
+    <div id="ui">
+        <div class="score-board">Kill: <span id="score">0</span></div>
+        <div class="hint">Slide to Turn / Double Tap to Fire</div>
+    </div>
     <canvas id="gameCanvas"></canvas>
 
     <script>
@@ -24,7 +27,6 @@
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
 
-        // 画面サイズ設定
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -33,136 +35,178 @@
         resize();
 
         let score = 0;
-        const touches = {}; // タッチ状態を管理
+        let joystick = { active: false, startX: 0, startY: 0, currX: 0, currY: 0 };
+        let isFiring = false;
 
         const player = {
             x: canvas.width / 2,
             y: canvas.height / 2,
             angle: -Math.PI / 2,
-            speed: 2,
-            maxSpeed: 6,
+            speed: 3,
+            maxSpeed: 7,
+            turnSpeed: 0.06,
             bullets: []
         };
 
         let enemies = [];
+        let clouds = Array.from({length: 10}, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            s: Math.random() * 2 + 1
+        }));
 
-        // タッチイベント処理
+        // タッチ制御（ジョイスティック + 自動射撃）
         window.addEventListener('touchstart', e => {
             e.preventDefault();
-            for (let t of e.changedTouches) {
-                touches[t.identifier] = t.clientX;
-            }
+            const t = e.touches[0];
+            joystick.active = true;
+            joystick.startX = t.clientX;
+            joystick.startY = t.clientY;
+            joystick.currX = t.clientX;
+            joystick.currY = t.clientY;
+            isFiring = true; // 触れている間は射撃
         }, {passive: false});
 
-        window.addEventListener('touchend', e => {
-            for (let t of e.changedTouches) {
-                delete touches[t.identifier];
-            }
+        window.addEventListener('touchmove', e => {
+            const t = e.touches[0];
+            joystick.currX = t.clientX;
+            joystick.currY = t.clientY;
+        });
+
+        window.addEventListener('touchend', () => {
+            joystick.active = false;
+            isFiring = false;
         });
 
         function update() {
-            let leftTouch = false;
-            let rightTouch = false;
-
-            // タッチ位置による旋回判定
-            Object.values(touches).forEach(posX => {
-                if (posX < canvas.width / 2) leftTouch = true;
-                else rightTouch = true;
-            });
-
-            if (leftTouch && !rightTouch) player.angle -= 0.08;
-            if (rightTouch && !leftTouch) player.angle += 0.08;
-            
-            // 両方押しでブースト＆自動射撃
-            if (leftTouch && rightTouch) {
-                player.speed = Math.min(player.speed + 0.2, player.maxSpeed);
-                if (Math.random() < 0.15) fire();
+            // ジョイスティックによる旋回
+            if (joystick.active) {
+                const dx = joystick.currX - joystick.startX;
+                const dy = joystick.currY - joystick.startY;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 10) {
+                    const targetAngle = Math.atan2(dy, dx);
+                    let diff = targetAngle - player.angle;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    player.angle += diff * 0.1; // 滑らかな追従
+                    player.speed = Math.min(player.speed + 0.1, player.maxSpeed);
+                }
             } else {
-                player.speed = Math.max(player.speed * 0.98, 2);
+                player.speed = Math.max(player.speed * 0.99, 3);
             }
 
-            // 移動計算
+            // 移動
             player.x += Math.cos(player.angle) * player.speed;
             player.y += Math.sin(player.angle) * player.speed;
-
-            // 画面端ループ
             player.x = (player.x + canvas.width) % canvas.width;
             player.y = (player.y + canvas.height) % canvas.height;
 
-            // 弾の更新
+            // 射撃処理
+            if (isFiring && Math.random() < 0.2) {
+                player.bullets.push({ x: player.x, y: player.y, angle: player.angle, life: 35 });
+            }
+
             player.bullets.forEach((b, i) => {
-                b.x += Math.cos(b.angle) * 10;
-                b.y += Math.sin(b.angle) * 10;
-                b.life--;
-                if (b.life < 0) player.bullets.splice(i, 1);
+                b.x += Math.cos(b.angle) * 12;
+                b.y += Math.sin(b.angle) * 12;
+                if (--b.life < 0) player.bullets.splice(i, 1);
             });
 
-            // 敵の更新と当たり判定
+            // 敵AIと判定
             enemies.forEach((en, ei) => {
-                en.x += Math.cos(en.angle) * 2.5;
-                en.y += Math.sin(en.angle) * 2.5;
+                en.x += Math.cos(en.angle) * 3;
+                en.y += Math.sin(en.angle) * 3;
                 en.x = (en.x + canvas.width) % canvas.width;
                 en.y = (en.y + canvas.height) % canvas.height;
+                
+                // 緩やかにプレイヤーの方を向くAI
+                const dat = Math.atan2(player.y - en.y, player.x - en.x);
+                en.angle += Math.sin(dat - en.angle) * 0.03;
 
                 player.bullets.forEach((b, bi) => {
                     if (Math.hypot(en.x - b.x, en.y - b.y) < 25) {
                         enemies.splice(ei, 1);
                         player.bullets.splice(bi, 1);
-                        score += 100;
+                        score++;
                         scoreElement.innerText = score;
                     }
                 });
             });
 
-            if (Math.random() < 0.03 && enemies.length < 5) spawnEnemy();
+            if (Math.random() < 0.02 && enemies.length < 4) spawnEnemy();
         }
 
-        function fire() {
-            if (player.bullets.length < 10) {
-                player.bullets.push({ x: player.x, y: player.y, angle: player.angle, life: 40 });
+        function drawZero(x, y, angle, color, isPlayer) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            
+            // 主翼
+            ctx.fillStyle = color;
+            ctx.fillRect(-5, -25, 8, 50);
+            // 胴体
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 20, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // 尾翼
+            ctx.fillRect(-18, -10, 4, 20);
+            
+            if (isPlayer) {
+                // 日の丸
+                ctx.fillStyle = "red";
+                ctx.beginPath(); ctx.arc(-2, -18, 5, 0, 7); ctx.fill();
+                ctx.beginPath(); ctx.arc(-2, 18, 5, 0, 7); ctx.fill();
+                // プロペラ（回転表現）
+                ctx.strokeStyle = "rgba(255,255,255,0.3)";
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(22, 0, 10, 0, 7); ctx.stroke();
             }
-        }
-
-        function spawnEnemy() {
-            enemies.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                angle: Math.random() * Math.PI * 2
-            });
+            ctx.restore();
         }
 
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 弾
-            ctx.fillStyle = '#FFF200';
-            player.bullets.forEach(b => {
-                ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, 7); ctx.fill();
+            // 背景（空のグラデーション）
+            const grad = ctx.createLinearGradient(0,0,0,canvas.height);
+            grad.addColorStop(0, "#1e5799");
+            grad.addColorStop(1, "#7db9e8");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 雲
+            ctx.fillStyle = "rgba(255,255,255,0.5)";
+            clouds.forEach(c => {
+                ctx.beginPath(); ctx.arc(c.x, c.y, 20, 0, 7); ctx.fill();
+                c.y += c.s; if (c.y > canvas.height) c.y = -20;
             });
 
-            // 自機
-            drawPlane(player.x, player.y, player.angle, 'white');
-            
-            // 敵
-            enemies.forEach(en => drawPlane(en.x, en.y, en.angle, '#FF4444'));
+            // 弾丸（曳光弾風）
+            player.bullets.forEach(b => {
+                ctx.strokeStyle = "orange";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(b.x, b.y);
+                ctx.lineTo(b.x - Math.cos(b.angle)*10, b.y - Math.sin(b.angle)*10);
+                ctx.stroke();
+            });
+
+            // ジョイスティック描画
+            if (joystick.active) {
+                ctx.strokeStyle = "rgba(255,255,255,0.5)";
+                ctx.beginPath(); ctx.arc(joystick.startX, joystick.startY, 40, 0, 7); ctx.stroke();
+                ctx.fillStyle = "rgba(255,255,255,0.3)";
+                ctx.beginPath(); ctx.arc(joystick.currX, joystick.currY, 20, 0, 7); ctx.fill();
+            }
+
+            drawZero(player.x, player.y, player.angle, "#2d5d3e", true); // 深緑の零戦
+            enemies.forEach(en => drawZero(en.x, en.y, en.angle, "#777", false));
 
             update();
             requestAnimationFrame(draw);
         }
 
-        function drawPlane(x, y, angle, color) {
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.rotate(angle);
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(20, 0);   // 鼻先
-            ctx.lineTo(-15, -12); // 左翼
-            ctx.lineTo(-10, 0);   // 後部
-            ctx.lineTo(-15, 12);  // 右翼
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
+        function spawnEnemy() {
+            enemies.push({ x: Math.random()*canvas.width, y: -50, angle: Math.PI/2 });
         }
 
         draw();
